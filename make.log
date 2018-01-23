@@ -1,0 +1,50 @@
+make -C ./ -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[1]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project'
+make -C display -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/display'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/display'
+make -C draw -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/draw'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/draw'
+make -C page -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/page'
+arm-linux-gcc -Wall -O0 -g -DMEMWATCH -DMEMWATCH_STDIO -I /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/include -I /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/common  -I /home/xieyb/master/stage_dir/target/freetype/jz2440_4.3.2/usr/local/include/ -I /home/xieyb/master/stage_dir/target/tslib/jz2440_4.3.2/usr/local/include/ -Wp,-MD,.page_browse.o.d -c -o page_browse.o page_browse.c
+arm-linux-ld -r -o built-in.o pic_merge.o pic_zoom.o page_manager.o page_main.o page_setting.o page_interval.o page_browse.o
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/page'
+make -C pic -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/pic'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/pic'
+make -C encode -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/encode'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/encode'
+make -C fonts -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/fonts'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/fonts'
+make -C input -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/input'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/input'
+make -C file -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/file'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/file'
+make -C log -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/log'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/log'
+make -C kfifo -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/kfifo'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/kfifo'
+make -C mem -f /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/Makefile.build
+make[2]: 正在进入目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/mem'
+make[2]: 没有什么可以做的为 `__build'。
+make[2]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/mem'
+arm-linux-ld -r -o built-in.o display/built-in.o draw/built-in.o page/built-in.o pic/built-in.o encode/built-in.o fonts/built-in.o input/built-in.o file/built-in.o log/built-in.o kfifo/built-in.o mem/built-in.o main.o debug.o libthreadpro.o
+make[1]:正在离开目录 `/home/xieyb/samba/study/jz2440/app/digit/digitphoto/project'
+arm-linux-gcc -Wall -O0 -g -DMEMWATCH -DMEMWATCH_STDIO -I /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/include -I /home/xieyb/samba/study/jz2440/app/digit/digitphoto/project/common  -I /home/xieyb/master/stage_dir/target/freetype/jz2440_4.3.2/usr/local/include/ -I /home/xieyb/master/stage_dir/target/tslib/jz2440_4.3.2/usr/local/include/ -o digitphoto ./built-in.o -lm -lpthread -lrt -L /home/xieyb/master/stage_dir/target/freetype/jz2440_4.3.2/usr/local/lib/ -lfreetype -L /home/xieyb/master/stage_dir/target/tslib/jz2440_4.3.2/usr/local/lib/ -lts 

@@ -1,0 +1,7 @@
+此makefile具有分层功能
+1、执行make时，遇到第一个伪目标all,由于没有依赖关系，所以直接执行make -c ./ -f $(TOP_DIR)/Makefile.build命令，
+   也就是先切换到顶层目录，然后执行顶层目录的Makefile.build
+2、进入顶层目录的Makefile.build后，根据当前目录是否就是顶层目录来决定是否包含当前目录的Makefile，
+   对obj-y目标进行解析，提取子目录放入subdir-y中，当前目录目标放入cur_objs中，当前目标的依赖关系文件名放入dep_files
+3、遇到由.PHONY指定的伪目标__build 及subdir-y，__build目标由子目录和当前目录的build-in.o文件，子目录的伪目标进入子目录调用顶层的Makefile.build继续
+   递归，直到没有子目录为止，生成built-in.o后返回上次目录

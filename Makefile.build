@@ -1,0 +1,53 @@
+obj-y	 :=
+cur_objs :=
+sub_dirs :=
+
+CUR_DIR := $(shell pwd)
+
+ifeq ($(CUR_DIR), $(TOP_DIR))
+    obj-y += $(TOP_OBJS)
+else
+    include ./Makefile
+endif
+
+subdir-y    :=
+cur_objs    :=
+subdir_objs :=
+dep_files   :=
+
+#main.o display/
+
+# display  draw  encode  fonts
+subdir-y += $(patsubst %/, %, $(filter %/, $(obj-y) ) )
+
+#main.o  debug.o
+cur_objs += $(filter %.o, $(obj-y) ) 
+
+#display/built-in.o  draw/built-in.o  encode/built-in.o  fonts/built-in.o
+subdir_objs += $(foreach dir, $(subdir-y), $(dir)/built-in.o)
+
+#main.o.d  debug.o.d
+dep_files += $(foreach f, $(cur_objs), $(f).d)
+dep_files := $(wildcard $(dep_files))
+
+ifneq ($(dep_files),)
+    include $(dep_files)
+endif
+
+
+.PHONY  : __build $(subdir-y)
+__build : $(subdir-y) built-in.o
+
+$(subdir-y) : 
+	make -C $@ -f $(TOP_DIR)/Makefile.build
+
+built-in.o : $(subdir_objs) $(cur_objs)
+    #将多个目标合并成单个目标文件，对于C代码，要加-r
+	$(LD) -r -o $@ $^
+
+dep_file = .$@.d
+
+%.o : %.c
+	$(CC) $(CFLAGS) -Wp,-MD,$(dep_file) -c -o $@ $<
+
+
