@@ -8,6 +8,19 @@
 
 static struct pic_data* get_setting_page_data(const struct disp_operation * const pdisp);
 static int deal_setting_page_event(struct input_event* pevent, struct disp_operation* pdisp);
+/*****************************************************************************
+* Function     : page_setting_free_source
+* Description  : 释放setting界面的资源
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void page_setting_free_source(void);
 
 //主界面显示的坐标
 static const struct disp_layout setting_page_icon_layout[] =
@@ -29,7 +42,10 @@ static struct page_operations page_setting_ops =
     .ppage_data = NULL,
     .get_page_data = get_setting_page_data,
     .deal_event = deal_setting_page_event,
+    .free_source = page_setting_free_source,
 };
+
+static struct pic_data *pcur_disp_data;
 
 /*****************************************************************************
 * Function     : get_setting_page_data
@@ -48,8 +64,10 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
     char path[128];
     struct file_desc pic_desc;
     struct pic_operations* ppic;
-    struct pic_data pic, zoom_pic, *disp_data;
-    const struct disp_layout* playout;
+    struct pic_data pic, zoom_pic, *disp_data = NULL;
+    const struct disp_layout* playout = NULL;
+
+    zoom_pic.pixeldata = NULL;
     
     if (pdisp == NULL)
     {
@@ -57,7 +75,8 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
     }
 
     //构造显示设备的pic_data结构体
-    if ( (disp_data = malloc(sizeof(struct pic_data) ) ) == NULL)
+    check_null_point(disp_data);
+    if ( (disp_data = calloc(1, sizeof(struct pic_data) ) ) == NULL)
     {
         return NULL;
     }
@@ -66,8 +85,10 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
     disp_data->bpp = pdisp->bpp;
     disp_data->linebytes = disp_data->width * (disp_data->bpp >> 3);
     disp_data->totalbytes = pdisp->dev_mem_size;
-    if ( (disp_data->pixeldata = (unsigned char *)malloc(disp_data->totalbytes) ) == NULL)
+    check_null_point(disp_data->pixeldata);
+    if ( (disp_data->pixeldata = (unsigned char *)calloc(1, disp_data->totalbytes) ) == NULL)
     {
+        free_memory(disp_data);
         return NULL;
     }
     //清除当前界面的背景为COLOR_BACKGROUND
@@ -104,17 +125,20 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
             DBG_ERROR("can not get % data\n", path);
             continue;
         }
- 
+        //关闭图片文件
+        close_one_pic(&pic_desc);
         //构造缩小后的图片数据
         zoom_pic.height = playout->botrighty - playout->toplefty + 1;
         zoom_pic.width = playout->botrightx - playout->topleftx + 1;
         zoom_pic.bpp = disp_data->bpp;
         zoom_pic.linebytes = zoom_pic.width * (zoom_pic.bpp >> 3);
         zoom_pic.totalbytes = zoom_pic.linebytes * zoom_pic.height;
-        
+
+        check_null_point(zoom_pic.pixeldata);
         if ( (zoom_pic.pixeldata = (unsigned char *)malloc(zoom_pic.totalbytes) ) == NULL)
         {
-            close_one_pic(&pic_desc);
+            //释放图片的原数据
+            free_memory(pic.pixeldata);
             DBG_ERROR("malloc %s %d memory error\n", path, zoom_pic.totalbytes);
             continue;
         }
@@ -122,11 +146,15 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
         //进行图片缩放
         if (pic_zoom(&zoom_pic, &pic) == -1)
         {
+            //释放缩放后的数据
             free_memory(zoom_pic.pixeldata);
+            //释放图片的原数据
+            free_memory(pic.pixeldata);
             DBG_ERROR("pic zoom error\n");
             continue;
         }
-
+        //释放图片的原数据
+        free_memory(pic.pixeldata);
         //合并图像
         if (pic_merge(playout->topleftx, playout->toplefty, &zoom_pic, disp_data) == -1)
         {
@@ -136,11 +164,8 @@ static struct pic_data *get_setting_page_data(const struct disp_operation * cons
         }
       
         free_memory(zoom_pic.pixeldata);
-           
-        //关闭文件数据
-        close_one_pic(&pic_desc);
     }
- 
+    pcur_disp_data = disp_data;
     return disp_data;
 }
 
@@ -164,6 +189,7 @@ static int deal_setting_page_key(int key, int press, struct disp_operation* pdis
     switch (key)
     {
         case 's':       //选择目录
+            
             break;
         case 'i':       //设置连播模式的间隔
             return show_specify_page_by_name("interval", pdisp);
@@ -214,6 +240,29 @@ static int deal_setting_page_event(struct input_event* pevent, struct disp_opera
     return -1;
 }
 
+/*****************************************************************************
+* Function     : page_setting_free_source
+* Description  : 释放setting界面的资源
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void page_setting_free_source(void)
+{
+    if (pcur_disp_data)
+    {
+        if (pcur_disp_data->pixeldata)
+        {
+            free_memory(pcur_disp_data->pixeldata);
+        }
+        free_memory(pcur_disp_data);
+    }
+}
 /*****************************************************************************
 * Function     : page_setting_init
 * Description  : setting界面初始化

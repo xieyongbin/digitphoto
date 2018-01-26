@@ -35,7 +35,8 @@ struct page_operations* get_page_operations_by_name(const char *name)
     
     if (name == NULL)
         return NULL;
-    
+
+    pthread_rwlock_rdlock(&list_head_rwlock);
     list_for_each(plist, &page_list_head)
     {
         ptemp = list_entry(plist, struct page_operations, list);
@@ -43,10 +44,12 @@ struct page_operations* get_page_operations_by_name(const char *name)
         {
             if (!strcmp(ptemp->name, name))
             {
+                pthread_rwlock_unlock(&list_head_rwlock);
                 return ptemp;
             }
         }
     }
+    pthread_rwlock_unlock(&list_head_rwlock);
     return NULL;
 }
 
@@ -76,7 +79,8 @@ struct page_operations* get_kid_page(const char *kid_name, struct page_operation
     //判断是否有子页面
     if (list_empty(&pfather->page_kid) )
         return NULL;
-
+    
+    pthread_rwlock_rdlock(&list_head_rwlock);
     list_for_each(plist, &pfather->page_kid)
     {
         ptemp = list_entry(plist, struct page_list, list);
@@ -85,10 +89,12 @@ struct page_operations* get_kid_page(const char *kid_name, struct page_operation
             ppage = (struct page_operations *)ptemp->pcontext;
             if (!strcmp(ppage->name, kid_name) ) //找到了子界面
             {
+                pthread_rwlock_unlock(&list_head_rwlock);
                 return ppage; //返回找到的子界面结构体地址
             }
         }
     }
+    pthread_rwlock_unlock(&list_head_rwlock);
     return NULL;
 }
 
@@ -153,22 +159,31 @@ int show_specify_page(struct page_operations *pops, struct disp_operation* pdisp
     {
         pops->sync_source(page_data);
     }
+    if (pcur_page) //释放当前页面的资源
+    {
+        printf("page %s free source\n", pcur_page->name);
+        if (pcur_page->free_source)
+        {
+            pcur_page->free_source();
+        }
+    }
+    else
+    {
+        if (pcur_page) //当前界面不为NULL
+        {
+            if (pcur_page->ppage_data) //没有释放当前页面的数据
+            {
+                if (pcur_page->ppage_data->pixeldata)
+                {
+                    //释放该页内存
+                    free_memory(pcur_page->ppage_data->pixeldata);
+                }
+                //释放该页内存
+                free_memory(pcur_page->ppage_data);
+            }
+        }
+    }
     
-//    if (pcur_page) //当前界面不为NULL
-//    {
-//        if (pcur_page->ppage_data) //没有释放当前页面的数据
-//        {
-//            if (pcur_page->ppage_data->pixeldata)
-//            {
-//                //释放该页内存
-//                free(pcur_page->ppage_data->pixeldata);
-//                pcur_page->ppage_data->pixeldata = NULL;
-//            }
-//            //释放该页内存
-//            free(pcur_page->ppage_data);
-//            pcur_page->ppage_data = NULL;
-//        }
-//    }
     //同步当前界面指针
     pcur_page = pops;
     pcur_page->ppage_data = page_data; 
@@ -244,6 +259,21 @@ int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
         if (pcur_page && pcur_page->deal_event)
             return pcur_page->deal_event(pevent, pdisp); //交给下一层去完成
     }
+    else
+    {
+        if (pevent->val.value == 'q')
+        {
+            //释放当前界面的内存
+            if (pcur_page)
+            {
+                if (pcur_page->free_source)
+                {
+                    pcur_page->free_source();
+                }
+            }
+            pthread_exit(0);
+        }
+    }
     return -1;
 }
 
@@ -286,13 +316,14 @@ int register_page_operation(struct page_operations *pops)
 *****************************************************************************/
 int register_kid_page(struct page_operations* pfather, struct page_operations* pkid)
 {
-    struct page_list* ppage_list;
+    struct page_list* ppage_list = NULL;
     
     if ( (pfather == NULL) || (pkid == NULL) )
     {
         return -1;
     }
-    
+
+    check_null_point(ppage_list);
     if ( (ppage_list = (struct page_list*)malloc(sizeof(struct page_list) ) ) == NULL)
     {
         return -1;
@@ -419,21 +450,24 @@ int page_get_pic_data(char* path, const struct disp_layout* playout, unsigned in
         DBG_ERROR("can not get % data\n", path);
         return -1;
     }
-
+    //关闭打开的图片文件
+    close_one_pic(&pic_desc);
+    
     //构造缩小后的图片数据
     zoom_pic.height = playout->botrighty - playout->toplefty + 1;
     zoom_pic.width = playout->botrightx - playout->topleftx + 1;
     zoom_pic.bpp = bpp;
     zoom_pic.linebytes = zoom_pic.width * (zoom_pic.bpp >> 3);
     zoom_pic.totalbytes = zoom_pic.linebytes * zoom_pic.height;
-    
-    if ( (zoom_pic.pixeldata = (unsigned char *)malloc(zoom_pic.totalbytes) ) == NULL)
+    zoom_pic.pixeldata = NULL;
+    check_null_point(zoom_pic.pixeldata);
+    if ( (zoom_pic.pixeldata = (unsigned char *)calloc(1, zoom_pic.totalbytes) ) == NULL)
     {
-        close_one_pic(&pic_desc);
+        //释放图片原数据
+        free_memory(pic.pixeldata);
         DBG_ERROR("malloc %s %d memory error\n", path, zoom_pic.totalbytes);
         return -1;
     }
-    memset(zoom_pic.pixeldata, 0, sizeof(zoom_pic.totalbytes) );
     
     //进行图片缩放
     if (pic_zoom(&zoom_pic, &pic) == -1)
@@ -442,10 +476,9 @@ int page_get_pic_data(char* path, const struct disp_layout* playout, unsigned in
         DBG_ERROR("pic zoom error\n");
         return -1;
     }
-
+    //释放图片原数据
+    free_memory(pic.pixeldata);
     *pzoom_data = zoom_pic; //保存缩放后的数据
-    //关闭文件数据
-    close_one_pic(&pic_desc);
     return 0;
 }
 

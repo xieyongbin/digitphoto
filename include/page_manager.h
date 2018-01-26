@@ -24,6 +24,7 @@ struct page_operations
     struct pic_data* (*get_page_data)(const struct disp_operation * const pdisp); //获取当前页面要显示的点阵数据
     int (*deal_event)(struct input_event* pevent, struct disp_operation* pdisp);  //处理事件
     int (*sync_source)(struct pic_data *ppic_data);            //同步资源
+    void (*free_source)(void);            //释放资源
     void (*prepare)(void);
     struct list_head list;
 };

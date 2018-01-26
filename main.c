@@ -362,7 +362,7 @@ void* thread_control(void* arg)
     
     //显示主界面
     show_specify_page(pmain_ops, pdisp_ops);
-#endif    
+#endif
     if (show_specify_page_by_name("main", pdisp_ops) == -1)
     {
         DBG_ERROR("show main page error\n");
@@ -384,7 +384,6 @@ int main(int argc, char **argv)
     int ret = -1;
     void *tret = NULL;
     struct disp_operation* pdisp;
-    struct timeval time;
     pthread_t control_tid;
 
     /* 设置SIGSEGV信号的处理函数 */
@@ -448,7 +447,6 @@ int main(int argc, char **argv)
 goto_done:     
 goto_error1:
     disp_close_all_device();
-goto_error2:
     //注销文字解码
     del_all_font_from_encode();
     //注销字体

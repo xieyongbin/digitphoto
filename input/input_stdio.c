@@ -111,24 +111,25 @@ static int get_input_stdio_event(struct input_event *pevent)
         DBG_ERROR("gettimeofday error\n");
         return -1;
     }
-    switch (c)
-    {
-        case 'n':
-            //下一页
-            pevent->val.value = INPUT_EVENT_KEY_DOWN;
-            break;
-        case 'u':
-            pevent->val.value = INPUT_EVENT_KEY_UP;
-            break;
-        case 'q':
-            pevent->val.value = INPUT_EVENT_KEY_QUIT;
-            break;
-        default:
-            pevent->val.value = INPUT_EVENT_KEY_UNKOWN;
-            break;
-    }
+//    switch (c)
+//    {
+//        case 'n':
+//            //下一页
+//            pevent->val.value = INPUT_EVENT_KEY_DOWN;
+//            break;
+//        case 'u':
+//            pevent->val.value = INPUT_EVENT_KEY_UP;
+//            break;
+//        case 'q':
+//            pevent->val.value = INPUT_EVENT_KEY_QUIT;
+//            break;
+//        default:
+//            pevent->val.value = INPUT_EVENT_KEY_UNKOWN;
+//            break;
+//    }
     //事件类型为标准输入
     pevent->type = INPUT_TYPE_STDIO;
+    pevent->val.value = c;
     pevent->time = curtime;
     return 0;
 }

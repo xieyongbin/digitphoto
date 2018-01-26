@@ -80,6 +80,7 @@ static int disp_lcd_open(void)
         return -1;        
     }
     //分配一个中间内存，避免一个一个字刷新
+    check_null_point(lcd_temp_buf);
     lcd_temp_buf = (unsigned char *)malloc(screen_size);
     if ( (unsigned char *)(NULL) == lcd_temp_buf)
     {

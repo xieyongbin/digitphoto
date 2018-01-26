@@ -18,8 +18,8 @@
 int pic_zoom(struct pic_data *pdest, struct pic_data *psrc)
 {
     unsigned int x, y, srcy;
-    unsigned char *dest_one_line_begin, *src_one_line_begin;
-    unsigned int *ptable_src;
+    unsigned char *dest_one_line_begin = NULL, *src_one_line_begin = NULL;
+    unsigned int *ptable_src = NULL;
     unsigned int pixelbytes;
 
     if ( (pdest == NULL) || (psrc == NULL) )
@@ -32,6 +32,7 @@ int pic_zoom(struct pic_data *pdest, struct pic_data *psrc)
         return -1;
 
     //申请一块内存，提前算好x，加快缩放速度
+    check_null_point(ptable_src);
     if ( (ptable_src = (unsigned int *)malloc(sizeof(unsigned int) * pdest->width) ) == NULL)
         return -1;
     
@@ -61,7 +62,7 @@ int pic_zoom(struct pic_data *pdest, struct pic_data *psrc)
 int PicZoom(struct pic_data* ptOriginPic, struct pic_data* ptZoomPic)
 {
     unsigned long dwDstWidth = ptZoomPic->width;
-    unsigned long* pdwSrcXTable;
+    unsigned long* pdwSrcXTable = NULL;
 	unsigned long x;
 	unsigned long y;
 	unsigned long dwSrcY;
@@ -74,6 +75,7 @@ int PicZoom(struct pic_data* ptOriginPic, struct pic_data* ptZoomPic)
 		return -1;
 	}
 
+    check_null_point(pdwSrcXTable);
     pdwSrcXTable = malloc(sizeof(unsigned long) * dwDstWidth);
     if (NULL == pdwSrcXTable)
     {

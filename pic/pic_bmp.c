@@ -147,6 +147,8 @@ static int get_bmp_data(struct file_desc* pfile, struct pic_data *pic)
     pic_info.bpp = pic->bpp;
     pic_info.linebytes = (pic_info.width * pinfohead->bibitcount) >> 3;
     pic_info.totalbytes = pic_info.linebytes * pic_info.height;
+    pic_info.pixeldata = NULL;
+    check_null_point(pic_info.pixeldata);
     pic_info.pixeldata = (unsigned char *)malloc(pic_info.totalbytes);
     if (pic_info.pixeldata == NULL)
     {

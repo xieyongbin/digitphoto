@@ -123,11 +123,11 @@ int register_input_operation(struct input_operation * pops)
 int input_init(int xres, int yres)
 {
     //标准输入初始化
-//    if (input_stdio_init() )
-//    {
-//        DBG_ERROR("input stdio init error\n");
-//        return -1;
-//    }
+    if (input_stdio_init() )
+    {
+        DBG_ERROR("input stdio init error\n");
+        return -1;
+    }
     //触摸屏初始化
     if (input_screentouch_init(xres, yres) )
     {

@@ -17,6 +17,19 @@
 
 static struct pic_data* get_interval_page_data(const struct disp_operation * const pdisp);
 static int deal_interval_page_event(struct input_event* pevent, struct disp_operation* pdisp);
+/*****************************************************************************
+* Function     : page_interval_free_source
+* Description  : 释放interval界面的资源
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void page_interval_free_source(void);
 
 //主界面显示的坐标
 static const struct disp_layout interval_page_icon_layout[] =
@@ -42,10 +55,11 @@ static struct page_operations page_interval_ops =
     .ppage_data = NULL,
     .get_page_data = get_interval_page_data,
     .deal_event = deal_interval_page_event,
+    .free_source = page_interval_free_source,
 };
 
 static unsigned char show_pic_interval = INVTERVAL_VAL_INIT;  //两张图片切换间隔初始值为1秒
-
+static struct pic_data *pcur_disp_data;
 /*****************************************************************************
 * Function     : interval_show
 * Description  : 显示两幅图片的间隔
@@ -73,7 +87,7 @@ static int interval_show(unsigned char interval, const struct disp_operation * c
     }
 
     ret = snprintf((char*)interval_string, sizeof(interval_string), "%02d", interval);
-    if (ret == -1)
+    if ( (ret == -1) || (ret >= sizeof(interval_string) ) )
     {
         return -1;
     }
@@ -125,7 +139,7 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
     char path[128];
     struct file_desc pic_desc;
     struct pic_operations* ppic;
-    struct pic_data pic, zoom_pic, *disp_data;
+    struct pic_data pic, zoom_pic, *disp_data = NULL;
     const struct disp_layout* playout;
     
     if (pdisp == NULL)
@@ -134,7 +148,8 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
     }
 
     //构造显示设备的pic_data结构体
-    if ( (disp_data = malloc(sizeof(struct pic_data) ) ) == NULL)
+    check_null_point(disp_data);
+    if ( (disp_data = calloc(1, sizeof(struct pic_data) ) ) == NULL)
     {
         return NULL;
     }
@@ -143,8 +158,10 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
     disp_data->bpp = pdisp->bpp;
     disp_data->linebytes = disp_data->width * (disp_data->bpp >> 3);
     disp_data->totalbytes = pdisp->dev_mem_size;
-    if ( (disp_data->pixeldata = (unsigned char *)malloc(disp_data->totalbytes) ) == NULL)
+    check_null_point(disp_data->pixeldata);
+    if ( (disp_data->pixeldata = (unsigned char *)calloc(1, disp_data->totalbytes) ) == NULL)
     {
+        free_memory(disp_data);
         return NULL;
     }
 
@@ -160,7 +177,7 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
         strncat(path, playout->iconname, sizeof(path) - 1);
         DBG_INFO("parse %s pic\n",  playout->iconname);
 
-        if (open_one_pic(path, &pic_desc) == -1)//打开图片浏览模式
+        if (open_one_pic(path, &pic_desc) == -1) //打开图片浏览模式
         {
             DBG_ERROR("get % error\n");
             continue;
@@ -182,17 +199,19 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
             DBG_ERROR("can not get % data\n", path);
             continue;
         }
- 
+        //关闭图片文件
+        close_one_pic(&pic_desc);
         //构造缩小后的图片数据
         zoom_pic.height = playout->botrighty - playout->toplefty + 1;
         zoom_pic.width = playout->botrightx - playout->topleftx + 1;
         zoom_pic.bpp = disp_data->bpp;
         zoom_pic.linebytes = zoom_pic.width * (zoom_pic.bpp >> 3);
         zoom_pic.totalbytes = zoom_pic.linebytes * zoom_pic.height;
-        
+        check_null_point(zoom_pic.pixeldata);
         if ( (zoom_pic.pixeldata = (unsigned char *)malloc(zoom_pic.totalbytes) ) == NULL)
         {
-            close_one_pic(&pic_desc);
+            //释放图片原数据
+            free_memory(pic.pixeldata);
             DBG_ERROR("malloc %s %d memory error\n", path, zoom_pic.totalbytes);
             continue;
         }
@@ -200,26 +219,28 @@ static struct pic_data *get_interval_page_data(const struct disp_operation * con
         //进行图片缩放
         if (pic_zoom(&zoom_pic, &pic) == -1)
         {
+            //释放缩放后的数据
             free_memory(zoom_pic.pixeldata);
+            //释放图片原数据
+            free_memory(pic.pixeldata);
             DBG_ERROR("pic zoom error\n");
             continue;
         }
-
+        //释放图片原数据
+        free_memory(pic.pixeldata);
         //合并图像
         if (pic_merge(playout->topleftx, playout->toplefty, &zoom_pic, disp_data) == -1)
         {
+            //释放缩放后的数据
             free_memory(zoom_pic.pixeldata);
             DBG_ERROR("pic merge error\n");
             continue;
         }
       
         free_memory(zoom_pic.pixeldata);
-
-        //关闭文件数据
-        close_one_pic(&pic_desc);
     }
     interval_show(show_pic_interval, pdisp, 0, disp_data);
-    
+    pcur_disp_data = disp_data;
     return disp_data;
 }
 
@@ -315,6 +336,30 @@ static int deal_interval_page_event(struct input_event* pevent, struct disp_oper
         picon++;
     }
     return -1;
+}
+
+/*****************************************************************************
+* Function     : page_interval_free_source
+* Description  : 释放interval界面的资源
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void page_interval_free_source(void)
+{
+    if (pcur_disp_data)
+    {
+        if (pcur_disp_data->pixeldata)
+        {
+            free_memory(pcur_disp_data->pixeldata);
+        }
+        free_memory(pcur_disp_data);
+    }
 }
 
 /*****************************************************************************

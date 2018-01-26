@@ -105,8 +105,8 @@ int is_regfile(const char *path, const char* filename)
 *****************************************************************************/
 int get_dir_context(const char* dirp, struct file_dirent **ppdirent, unsigned int *pnum)
 {
-    struct dirent **namelist;
-    struct file_dirent *pdirent;
+    struct dirent **namelist = NULL;
+    struct file_dirent *pdirent = NULL;
     int n, i, j;
     
     if ( (dirp == NULL) || (ppdirent == NULL) )
@@ -135,6 +135,7 @@ int get_dir_context(const char* dirp, struct file_dirent **ppdirent, unsigned in
     }
 
     //申请n-2个内存，过滤.跟..目录
+    check_null_point(pdirent);
     if ( (pdirent = (struct file_dirent *)malloc(sizeof(struct file_dirent) * (n - 2) ) ) == NULL)
     {
         for (i = 0; i < n; i++)

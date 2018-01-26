@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "config.h"
 #include "libthreadpro.h"
 #include "page_manager.h"
@@ -28,6 +29,33 @@
 static struct pic_data* get_browse_page_data(const struct disp_operation * const pdisp);
 static int deal_browse_page_event(struct input_event* pevent, struct disp_operation* pdisp);
 static int browse_page_sync_source(struct pic_data *ppic_data);
+/*****************************************************************************
+* Function     : browse_page_free_source
+* Description  : 释放当前界面的资源，切换到别的页面时调用
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void browse_page_free_source(void);
+
+/*****************************************************************************
+* Function     : __browse_page_free_source
+* Description  : 释放当前接资源，仅内部使用，
+* Input        : int free_background  ： 0 --- 不释放背景内存
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void __browse_page_free_source(int free_background);
 
 //浏览界面显示的坐标
 static const struct disp_layout browse_page_icon_layout[] =
@@ -51,18 +79,13 @@ static const struct disp_layout browse_page_select_layout[] =
     {0, 0, 0, 0, 'f', NULL},    //选择常规文件
 };
 
-static struct pic_data *pcur_disp_data;      //当前显示界面
+static struct pic_data *pcur_disp_data;        //当前显示界面
+static unsigned char need_generate_background = 1; //需要生成背景图
+
+static char dir_name_select[256] = DIR_TOP_PATH;            //选择显示的目录名
 
 //当前显示内容
-struct page_context_desc cur_page_context =
-{
-    .dir_name = DIR_TOP_PATH,
-};
-    
-struct page_context_desc next_page_context =
-{
-    .dir_name = DIR_TOP_PATH,
-};
+static struct page_context_desc cur_page_context, next_page_context;
 
 static struct page_operations page_browse_ops =
 {
@@ -73,6 +96,7 @@ static struct page_operations page_browse_ops =
     .get_page_data = get_browse_page_data,
     .deal_event = deal_browse_page_event,
     .sync_source = browse_page_sync_source,
+    .free_source = browse_page_free_source,
 };
 
 /*****************************************************************************
@@ -306,17 +330,22 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
         return NULL;
     }
 
-    //分配另外一块内存，用来保存当前界面的背景数据，避免后面重复计算背景数据
-//    if ( (pcur_background = (unsigned char *)malloc(pdisp->dev_mem_size) ) == NULL)
-    if ( (ppage_context->pback_ground = (unsigned char *)malloc(pdisp->dev_mem_size) ) == NULL)
+    if (need_generate_background)
     {
-        DBG_ERROR("malloc background memory error\n");
-        return NULL;
-    }
-    memset(ppage_context->pback_ground, 0, pdisp->dev_mem_size);
-
+        ppage_context = &cur_page_context;
+        //分配另外一块内存，用来保存当前界面的背景数据，避免后面重复计算背景数据
+        check_null_point(ppage_context->pback_ground);
+        if ( (ppage_context->pback_ground = (unsigned char *)calloc(1, pdisp->dev_mem_size) ) == NULL)
+        {
+            DBG_ERROR("malloc background memory error\n");
+            return NULL;
+        }
+        need_generate_background = 0;
+        //第一次进入的是选择的目录名，不再是根目录
+        strncpy(ppage_context->dir_name, dir_name_select, sizeof(ppage_context->dir_name) - 1);
+        ppage_context->dir_name[sizeof(ppage_context->dir_name) - 1] = '\0';
+    }  
     //获取当前目录的内容
-//    if (get_dir_context(cur_browse_dir, &one_page_browse.pdirfiledirent, &one_page_browse.totalnum) )
     if (get_dir_context(ppage_context->dir_name, &ppage_context->context.pdirfiledirent, &ppage_context->context.totalnum) )
     {
         free_memory(ppage_context->pback_ground);
@@ -328,7 +357,6 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
     big_layout.botrightx = pdisp->xres;
     big_layout.botrighty = pdisp->yres;
     //计算一个目录一页内容的坐标
-//    if (calc_file_coordinate(&big_layout, 80, 20, &one_page_browse) )
     if (calc_file_coordinate(&big_layout, 80, 20, &ppage_context->context) )
     {
         free_memory(ppage_context->pback_ground);
@@ -336,7 +364,8 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
         return NULL;
     }
     //构造显示设备的pic_data结构体
-    if ( (disp_data = (struct pic_data *)malloc(sizeof(struct pic_data) ) ) == NULL)
+    check_null_point(disp_data);
+    if ( (disp_data = (struct pic_data *)calloc(1, sizeof(struct pic_data) ) ) == NULL)
     {
         for (i = 0; i < ppage_context->context.pagerow; i++)
         {
@@ -351,7 +380,8 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
     disp_data->bpp = pdisp->bpp;
     disp_data->linebytes = disp_data->width * (disp_data->bpp >> 3);
     disp_data->totalbytes = pdisp->dev_mem_size;
-    if ( (disp_data->pixeldata = (unsigned char *)malloc(disp_data->totalbytes) ) == NULL)
+    check_null_point(disp_data->pixeldata);
+    if ( (disp_data->pixeldata = (unsigned char *)calloc(1, disp_data->totalbytes) ) == NULL)
     {
         free_memory(disp_data);
         for (i = 0; i < ppage_context->context.pagerow; i++)
@@ -375,7 +405,7 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
         strncpy(path, ICON_PATH, sizeof(path) - 1);
         strncat(path, playout->iconname, sizeof(path) - 1);
         DBG_INFO("parse %s pic\n",  playout->iconname);     
-        if (page_get_pic_data(path, playout, disp_data->bpp, &zoom_pic) )
+        if (page_get_pic_data(path, playout, disp_data->bpp, &zoom_pic) ) //获取缩放后的数据
         {
             DBG_ERROR("page_get_pic_data error\n");
             continue;
@@ -389,13 +419,19 @@ static struct pic_data *get_browse_page_data(const struct disp_operation * const
     }
     
     //备份背景数据内容
-    memcpy(ppage_context->pback_ground, disp_data->pixeldata, pdisp->dev_mem_size);
+    memcpy(cur_page_context.pback_ground, disp_data->pixeldata, pdisp->dev_mem_size);
     //合并第一页目录数据
-//    cur_page_num = 0;
     ppage_context->index = 0;
     if (get_dir_one_page_context(ppage_context->index, &ppage_context->context, disp_data) )
     {
-        DBG_ERROR("get_dir_one_page_context eroor\n");
+        free_memory(disp_data);
+        for (i = 0; i < ppage_context->context.pagerow; i++)
+        {
+            free_memory(ppage_context->context.pagedata[i]);
+        }
+        free_memory(ppage_context->context.pagedata);
+        free_memory(ppage_context->pback_ground);
+        DBG_ERROR("get_dir_one_page_context error\n");
         return NULL;
     }
     return disp_data;    
@@ -418,12 +454,15 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
 {
     char buf[256];
     unsigned int i, n;
+    int ret;
     FILE* pfather_dir_stream;
     struct pic_data* pdisp_data_tmp;
     
     switch (key)
     {
         case 'u':       //向上
+            printf("\ncur_page_context.dir_name %s\n", cur_page_context.dir_name);
+            printf("cur browse ops name %s\n", page_browse_ops.ppage_father->name);
             //判断是否是顶层目录
             if (!strcmp(cur_page_context.dir_name, DIR_TOP_PATH) )
             {
@@ -431,19 +470,34 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
                 //如果存在没有存在上一层目录，返回上一个界面
                 if (page_browse_ops.ppage_father)
                 {
-                    return show_specify_page(page_browse_ops.ppage_father, pdisp);
+                    if (show_specify_page(page_browse_ops.ppage_father, pdisp) )
+                    {
+                        DBG_ERROR("show dir %s error\n", page_browse_ops.ppage_father->name);
+                        return -1;
+                    }
+                    need_generate_background = 1;
+                    printf("top dir %s\n", page_browse_ops.ppage_father->name);
+                    return 0;
+                }
+                else
+                {
+                    DBG_ERROR("has no father page\n");
+                    return -1;
                 }
             }
             else
             {
                 //不是顶层目录，显示上一级目录
-                if (snprintf(buf, sizeof(buf), "dirname %s", cur_page_context.dir_name) == -1)
+                ret = snprintf(buf, sizeof(buf), "dirname %s", cur_page_context.dir_name);
+                if ( (ret == -1) || (ret >= sizeof(buf) ) )
                 {
+                    DBG_ERROR("snprintf error\n");
                     return -1;
                 }
                 //执行脚本命令dirname 
                 if ( (pfather_dir_stream = popen(buf, "r") )== NULL)
                 {
+                    DBG_ERROR("popen error:%s\n", strerror(errno) );
                     return -1;
                 }
                 //从文件流中读取数据到buf
@@ -451,6 +505,7 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
                 n = fread(buf, sizeof(char), sizeof(buf) - 1, pfather_dir_stream);
                 if (!feof(pfather_dir_stream) || !n) //判断是否是文件结束，返回非0表示文件结束
                 {
+                    pclose(pfather_dir_stream);
                     DBG_ERROR("fread error\n");
                     return -1;
                 }
@@ -481,7 +536,16 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
                     {
                         return -1;
                     }
-                    cur_page_context = next_page_context;
+                    //清除上一个目录的目录、坐标资源
+                    __browse_page_free_source(2);
+                    //把下一个要显示的路径拷贝给当前进行同步，页面未释放的资源将通过 cur_page_context来释放
+                    //拷贝目录路径
+                    strncpy(cur_page_context.dir_name, next_page_context.dir_name, sizeof(cur_page_context.dir_name) - 1);
+                    cur_page_context.dir_name[sizeof(cur_page_context.dir_name) - 1] = '\0';
+                    cur_page_context.index = next_page_context.index;
+                    cur_page_context.context = next_page_context.context;
+                    //清除下一次的数据
+                    memset(&next_page_context, 0, sizeof(next_page_context) );
                     pcur_disp_data = pdisp_data_tmp;
                     return 0;
                 }
@@ -489,6 +553,9 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
             return -1;
             
         case 's':       //选择
+            strncpy(dir_name_select, cur_page_context.dir_name, sizeof(dir_name_select) - 1);
+            dir_name_select[sizeof(dir_name_select) - 1] = '\0';
+            printf("select dir name %s\n", dir_name_select);
             break;
             
         case 'p':       //上一页
@@ -531,18 +598,18 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
                     DBG_ERROR("flush dir %s error\n", next_page_context.dir_name);
                     return -1;
                 }
-                //释放当前界面的内存
-                free_memory(pcur_disp_data->pixeldata);
-                free_memory(pcur_disp_data);
-                for (i = 0; i < cur_page_context.context.pagecol; i++)
-                {
-                    free_memory(cur_page_context.context.pagedata[i]);
-                }
-                free_memory(cur_page_context.context.pagedata);
-                free_memory(cur_page_context.pback_ground);
+                //清除上一个目录的目录、坐标资源
+                __browse_page_free_source(2);
 
-                //把下一个给当前
-                cur_page_context = next_page_context;
+                //把下一个要显示的路径拷贝给当前进行同步，页面未释放的资源将通过 cur_page_context来释放
+                //拷贝目录路径
+                strncpy(cur_page_context.dir_name, next_page_context.dir_name, sizeof(cur_page_context.dir_name) - 1);
+                cur_page_context.dir_name[sizeof(cur_page_context.dir_name) - 1] = '\0';
+                cur_page_context.index = next_page_context.index;
+                cur_page_context.context = next_page_context.context;
+                //清除下一次的数据
+                memset(&next_page_context, 0, sizeof(next_page_context) );
+                
                 pcur_disp_data = pdisp_data_tmp;
                 printf("cur_browse_dir %s\n", next_page_context.dir_name);
                 return 0;
@@ -551,6 +618,7 @@ static int deal_browse_page_key(int key, int press, struct disp_operation* pdisp
             
         case 'f':       //选择了文件
             break;
+            
             
         default:
             return -1;
@@ -659,9 +727,91 @@ static int browse_page_sync_source(struct pic_data *ppic_data)
     {
         return -1;
     }
-    cur_page_context = next_page_context;
+//    cur_page_context = next_page_context;
     pcur_disp_data = ppic_data;
+    printf("page browse sync source\n");
     return 0;
+}
+
+/*****************************************************************************
+* Function     : __browse_page_free_source
+* Description  : 释放当前接资源，仅内部使用，
+* Input        : int free_background  ： 0 --- 不释放背景内存
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void __browse_page_free_source(int free_background)
+{
+    int i;
+    
+    if (pcur_disp_data)
+    {
+        //释放图片内容
+        if (pcur_disp_data->pixeldata)
+        {
+            free_memory(pcur_disp_data->pixeldata);
+        }
+        //释放本身
+        free_memory(pcur_disp_data);
+    }
+    if (free_background == 1)
+    {
+        //释放界面背景内存
+        if (cur_page_context.pback_ground)
+        {
+            free_memory(cur_page_context.pback_ground);
+        }
+        //释放一页坐标的数据,是一个二维数组
+        for (i = 0; i < cur_page_context.context.pagecol; i++)
+        {
+            free_memory(cur_page_context.context.pagedata[i]);
+        }
+        free_memory(cur_page_context.context.pagedata);
+
+        //释放文件名数据
+        for (i = 0; i < cur_page_context.context.totalnum; i++)
+        {
+            free_memory(cur_page_context.context.pdirfiledirent);
+        }
+    }
+    else if (free_background == 2)
+    {
+        //释放一页坐标的数据,是一个二维数组
+        for (i = 0; i < cur_page_context.context.pagecol; i++)
+        {
+            free_memory(cur_page_context.context.pagedata[i]);
+        }
+        free_memory(cur_page_context.context.pagedata);
+
+        //释放文件名数据
+        for (i = 0; i < cur_page_context.context.totalnum; i++)
+        {
+            free_memory(cur_page_context.context.pdirfiledirent);
+        }
+    }
+}
+
+
+/*****************************************************************************
+* Function     : browse_page_free_source
+* Description  : 释放当前界面的资源，切换到别的页面时调用
+* Input        : void  
+* Output       ：
+* Return       : static
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月25日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+static void browse_page_free_source(void)
+{
+    __browse_page_free_source(1);
 }
 
 /*****************************************************************************

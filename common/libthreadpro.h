@@ -49,5 +49,8 @@ int cond_data_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, unsigned i
 //void free_memory(void *ptr);
 
 #define free_memory(ptr) do {free(ptr); ptr = NULL;} while(0);
+#define check_null_point(ptr)  do { if(ptr) printf("[%s][%05d]ptr is not null point\n", __FILE__, __LINE__); }while(0);
+
+                                    
 #endif //__LIB_THREAD_PRO_H__
 

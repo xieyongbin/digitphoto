@@ -535,6 +535,7 @@ int show_next_page(void)
     {
         if ( (page_manager.pcur_page == NULL) || page_manager.pcur_page->next == &page_manager.list_head) //已经到达链表的最后一项，需要把当前界面的内容加入链表
         {
+            check_null_point(ppage_desc);
             ppage_desc = (struct page_desc *)malloc(sizeof(struct page_desc) );
             if (ppage_desc == NULL)
             {

@@ -44,12 +44,14 @@ int open_one_pic(const char* name, struct file_desc *pfile_desc)
     //获取文件系统
     if (fstat(file_fd, &file_stat) == -1)
     {
+        close(file_fd);
         DBG_ERROR("fstat pic %s error\n", name);
         return -1;
     }
     //文件虚拟映射
     if ( (pfile_desc->pfilebuf = mmap(NULL, file_stat.st_size, PROT_READ, MAP_SHARED, file_fd, 0) )== (void*)-1)
     {
+        close(file_fd);
         DBG_ERROR("fstat pic %s error\n", name);
         return -1;
     }

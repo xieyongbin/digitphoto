@@ -54,12 +54,13 @@ int register_encode_operation(struct encode_operation* pops)
 *****************************************************************************/
 int add_font_to_encode(struct font_operation* pfont, struct encode_operation* pencode)
 {
-    struct font_list* plist;
+    struct font_list* plist = NULL;
     
     if ( (pfont == NULL) || (pencode == NULL) )
     {
         return -1;
     }
+    check_null_point(plist);
     plist = (struct font_list*)malloc(sizeof(struct font_list) );
     if (plist == NULL)
     {

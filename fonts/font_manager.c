@@ -26,12 +26,13 @@ static pthread_rwlock_t list_head_rwlock = PTHREAD_RWLOCK_INITIALIZER;
 *****************************************************************************/
 int register_font_operation(struct font_operation* pops)
 {
-    struct font_list *plist;
+    struct font_list *plist = NULL;
     
     if (pops == NULL)
     {
         return -1;
     }
+    check_null_point(plist);
     plist = (struct font_list *)malloc(sizeof(struct font_list) );
     if (plist == NULL)
     {
