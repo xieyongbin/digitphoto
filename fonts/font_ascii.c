@@ -4623,7 +4623,7 @@ static struct font_operation ascii_font_ops =
 {
     .name               = "ascii",
     .open               = ascii_open,
-    .get_font_bitmap    = ascii_get_font_bitmap,
+    .get_font_bitmap    = ascii_get_font_bitmap,    
 };
 
 
@@ -4685,6 +4685,8 @@ static int ascii_get_font_bitmap(const unsigned int code, struct font_bitmap *pf
 
     return 0;
 }
+
+
 /*****************************************************************************
 * Function     : ascii_font_init
 * Description  : ascii字体初始化
@@ -4699,6 +4701,7 @@ static int ascii_get_font_bitmap(const unsigned int code, struct font_bitmap *pf
 *****************************************************************************/
 int ascii_font_init(void)
 {
+    //注册成功，会分配一个 sizeof(struct font_list)的空间
     return register_font_operation(&ascii_font_ops);
 }
 

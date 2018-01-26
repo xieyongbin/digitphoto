@@ -46,7 +46,7 @@ int register_encode_operation(struct encode_operation* pops)
                  struct encode_operation* pencode ：解码方式
 * Output       ：
 * Return       : -1 --- 添加失败  0---添加成功
-* Note(s)      : 
+* Note(s)      : 此函数将会分配一个sizeof(struct font_list)空间
 * Histroy      : 
 * 1.Date       : 2017年12月7日
 *   Author     : Xieyb
@@ -349,4 +349,22 @@ int encode_init(void)
     return 0;
 }
 
+/*****************************************************************************
+* Function     : encode_exit
+* Description  : 释放字体解码占用的资源，通过 add_font_to_encode() 添加一个支持的字体
+                 会分配一个sizeof(struct font_list)空间，在此处进行释放
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void encode_exit(void)
+{
+    //删除所有字体解码的所支持的字体
+    del_all_font_from_encode();
+}
 

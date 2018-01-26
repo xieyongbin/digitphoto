@@ -271,6 +271,14 @@ int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
                     pcur_page->free_source();
                 }
             }
+            //释放字体内存
+            font_exit();
+            //释放所有字体解码所支持的字体空间
+            encode_exit();
+            //释放显示设备的资源
+            disp_exit();
+            //释放page的资源
+            page_exit();
             pthread_exit(0);
         }
     }
@@ -402,6 +410,51 @@ int page_init(void)
     error |= page_browse_init();   //browse页
     
     return error;
+}
+
+/*****************************************************************************
+* Function     : page_exit
+* Description  : 注销所有的page，并释放子page的内存
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+int page_exit(void)
+{
+    struct list_head *plist, *pnext;
+    struct list_head *pkid_list, *pkid_next;
+    struct page_operations *ppage_ops;
+    struct page_list *ppage;
+
+    pthread_rwlock_wrlock(&list_head_rwlock);
+    //遍历整个page链表
+    list_for_each_safe(plist, pnext, &page_list_head)
+    {
+        ppage_ops = list_entry(plist, struct page_operations, list);
+        //是否有子页
+        if (!list_empty(&ppage_ops->page_kid) )
+        {
+            //有子页
+            //遍历该page的子page
+            list_for_each_safe(pkid_list, pkid_next, &ppage_ops->page_kid)
+            {
+                //子page是以struct page_list的list作为节点的
+                ppage = list_entry(pkid_list, struct page_list, list);
+                //删除子page节点
+                list_del(pkid_list);
+                //释放 strcut page_list结构体
+                free_memory(ppage);
+            }
+        }
+        //删除节点
+        list_del(plist);
+    }
+    pthread_rwlock_unlock(&list_head_rwlock);
 }
 
 /*****************************************************************************

@@ -31,13 +31,16 @@ struct font_bitmap
     struct bitmap_param bitmap_var;          //输出:位图参数
 };
 
-struct font_operation                   //字体操作函数
+//字体操作函数,供下级具体字体调用
+struct font_operation
 {
     char* name;
     int (*open)(const char *fontfile, const unsigned int fontsize);
+    void (*close)(void);
     int (*set_font_size)(const unsigned int fontsize);
     int (*get_font_size)(void);
     int (*get_font_bitmap)(const unsigned int code, struct font_bitmap *pfont_bitmap);
+    void (*exit)(void);
 };
 
 struct font_list                        //字体链表节点
@@ -145,6 +148,20 @@ int show_support_font(void);
 *   Modify     : Create Function
 *****************************************************************************/
 int font_init(void);
+
+/*****************************************************************************
+* Function     : font_exit
+* Description  : 释放字体的资源，调用 register_font_operation() 会分配一个 sizeof(struct font_list)空间
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void font_exit(void);
 
 
 #endif //__FONT_MANAGER_H__

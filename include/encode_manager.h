@@ -145,6 +145,21 @@ int show_encode_support_font(void);
 *****************************************************************************/
 int encode_init(void);
 
+/*****************************************************************************
+* Function     : encode_exit
+* Description  : 释放字体解码占用的资源，通过 add_font_to_encode() 添加一个支持的字体
+                 会分配一个sizeof(struct font_list)空间，在此处进行释放
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void encode_exit(void);
+
 void ClearRectangleInVideoMem(unsigned int iTopLeftX, unsigned int iTopLeftY, unsigned int iBotRightX, unsigned int iBotRightY, struct pic_data* ppic_data, unsigned int dwColor);
 
 

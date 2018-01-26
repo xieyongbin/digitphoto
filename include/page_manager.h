@@ -26,7 +26,7 @@ struct page_operations
     int (*sync_source)(struct pic_data *ppic_data);            //同步资源
     void (*free_source)(void);            //释放资源
     void (*prepare)(void);
-    struct list_head list;
+    struct list_head list;                //以struct page_list的list作为节点
 };
 
 /*****************************************************************************
@@ -186,6 +186,20 @@ int unregister_kid_page(struct page_operations* pfather, struct page_operations*
 *   Modify     : Create Function
 *****************************************************************************/
 int page_init(void);
+
+/*****************************************************************************
+* Function     : page_exit
+* Description  : 注销所有的page，并释放子page的内存
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+int page_exit(void);
 
 /*****************************************************************************
 * Function     : page_get_pic_data

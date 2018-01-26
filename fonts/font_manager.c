@@ -309,4 +309,21 @@ int font_init(void)
     return 0;
 }
 
+/*****************************************************************************
+* Function     : font_exit
+* Description  : 释放字体的资源，调用 register_font_operation() 会分配一个 sizeof(struct font_list)空间
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void font_exit(void)
+{
+    unregister_all_font_operation();
+}
+
 

@@ -99,5 +99,19 @@ int disp_close_all_device(void);
 *****************************************************************************/
 int disp_init(void);
 
+/*****************************************************************************
+* Function     : disp_exit
+* Description  : 释放所有显示设备的资源
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月26日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void disp_exit(void);
+
 #endif //__DISP_MANAGER_H__
 
