@@ -16,6 +16,9 @@
 #include "draw.h"
 
 
+#define THREAD_CONTROL_STACK_SIZE   (1024 * 100)   // 控制线程堆栈为100K
+#define THREAD_CONTROL_PRI          (0)            // 控制线程优先级
+
 #define FILE_MAX_LEN (127)
 
 struct bookset
@@ -323,6 +326,50 @@ goto_error2:
 }
 
 /*****************************************************************************
+* Function     : deal_input_event
+* Description  : 处理外部输入事件
+* Input        : struct input_event *pevent    
+*                struct disp_operation* pdisp  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月29日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
+{
+    if (pevent == NULL)
+    {
+        return -1;
+    }
+    //输入时间来自标准输入
+    if (pevent->type == INPUT_TYPE_STDIO)
+    {
+        if (isalpha(pevent->val.value) )  //是一个字母？
+        {
+            if (tolower(pevent->val.value) == 'q')
+            {
+                //结束线程
+                //释放当前界面的内存
+                release_cur_page_resource();
+                //释放字体内存
+                font_exit();
+                //释放所有字体解码所支持的字体空间
+                encode_exit();
+                //释放显示设备的资源
+                disp_exit();
+                //释放page的资源
+                page_exit();
+                pthread_exit(0);
+            }
+        }
+    }
+    return page_deal_input_event(pevent, pdisp);
+}
+
+/*****************************************************************************
 * Function     : thread_control
 * Description  : 创建控制线程
 * Input        : void* arg  
@@ -369,13 +416,12 @@ void* thread_control(void* arg)
         pthread_exit((void *)-1);
     }
     
-    
     while (1)
     {
-        get_input_event(&in_event);   //获取输入事件
-        deal_input_event(&in_event, pdisp_ops);  //处理输入事件
+        get_input_event(&in_event);                   //获取输入事件
+        
+        deal_input_event(&in_event, pdisp_ops);       //处理输入事件
     }
-    pthread_exit((void *)0);
 }
 
 // ./digitphoto <freetype_font_file>
@@ -433,7 +479,10 @@ int main(int argc, char **argv)
         goto goto_error1;
     
     //创建主控线程
-    if (pthread_create(&control_tid, NULL, thread_control, (void *)pdisp) == -1)
+//    if (pthread_create(&control_tid, NULL, thread_control, (void *)pdisp) == -1)
+//        goto goto_error1;
+
+    if (pthread_spawn(&control_tid, PTHREAD_CREATE_JOINABLE, THREAD_CONTROL_PRI, THREAD_CONTROL_STACK_SIZE, thread_control, (void *)pdisp) )
         goto goto_error1;
     
     while (1)

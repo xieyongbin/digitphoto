@@ -35,18 +35,24 @@ int sem_data_timedwait(sem_t *sem, unsigned int msec);
 int cond_data_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, unsigned int msec);
 
 /*****************************************************************************
-* Function     : free_memory
-* Description  : 释放一段内存，并设置为NULL，避免重复释放
-* Input        : void *ptr  
+* Function     : pthread_spawn
+* Description  : 创建一个线程
+* Input        : pthread_t *thread               ：返回建立成功的线程ID
+*                int detach                      : 线程分离状态，取值为 PTHREAD_CREATE_DETACHED 、PTHREAD_CREATE_JOINABLE
+*                int prio                        : 线程优先级
+*                unsigned long stacksize         : 线程堆栈字节数
+*                void *(*start_routine)(void *)  ：线程主体函数
+*                void *arg                       ：线程参数
 * Output       ：
-* Return       : 
+* Return       : 0 ： 成功     其他值：错误
 * Note(s)      : 
 * Histroy      : 
-* 1.Date       : 2018年1月10日
+* 1.Date       : 2018年1月27日
 *   Author     : Xieyb
 *   Modify     : Create Function
 *****************************************************************************/
-//void free_memory(void *ptr);
+int pthread_spawn(pthread_t *thread, int detach, int prio, unsigned long stacksize, 
+                  void *(*start_routine)(void *), void *arg);
 
 #define free_memory(ptr) do {free(ptr); ptr = NULL;} while(0);
 #define check_null_point(ptr)  do { if(ptr) printf("[%s][%05d]ptr is not null point\n", __FILE__, __LINE__); }while(0);

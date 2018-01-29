@@ -15,8 +15,11 @@
 #include "log_manager.h"
 #include "debug.h"
 
+#define THREAD_LOG_UDP_SEND_STACK_SIZE       (1024 * 50)   //log udp发送线程堆栈大小
+#define THREAD_LOG_UDP_SEND_PRI              (0)           //log udp发送线程优先级
+#define THREAD_LOG_UDP_RECV_STACK_SIZE       (1024 * 100)  //log udp接收线程堆栈大小
+#define THREAD_LOG_UDP_RECV_PRI              (0)           //log udp接收线程优先级
 #define SERVER_PORT  (1234)
-
 
 static pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond_send = PTHREAD_COND_INITIALIZER;
@@ -78,7 +81,7 @@ static void * thread_udp_send(void *arg)
     unsigned int len, done;
 
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);   //禁止取消线程
-    pthread_detach(pthread_self());
+//    pthread_detach(pthread_self());
     if ( (pfifo = kfifo_alloc(LOG_BUF_SIZE * 10) ) == NULL)
     {
         pthread_exit( (void *)(-1));
@@ -134,7 +137,7 @@ static void * thread_udp_rcv(void *arg)
     socklen_t client_addr_size = sizeof(struct sockaddr_in);
     char rcv_buf[LOG_BUF_SIZE];
     //设置为分离属性
-    pthread_detach(pthread_self());
+//    pthread_detach(pthread_self());
     
     while (1)
     {
@@ -232,9 +235,19 @@ static int log_udp_open(void)
         return -1;
     }
     //创建发送线程
-    pthread_create(&snd_tid, NULL, thread_udp_send, NULL);
+//    pthread_create(&snd_tid, NULL, thread_udp_send, NULL);
+    if (pthread_spawn(&snd_tid, PTHREAD_CREATE_DETACHED, THREAD_LOG_UDP_SEND_PRI, THREAD_LOG_UDP_SEND_STACK_SIZE, thread_udp_send, NULL) )
+    {
+        DBG_ERROR("pthread_spawn thread_udp_send error\n");
+        return -1;
+    }
     //创建接收线程
-    pthread_create(&rcv_tid, NULL, thread_udp_rcv, NULL);
+//    pthread_create(&rcv_tid, NULL, thread_udp_rcv, NULL);
+    if (pthread_spawn(&rcv_tid, PTHREAD_CREATE_DETACHED, THREAD_LOG_UDP_RECV_PRI, THREAD_LOG_UDP_RECV_STACK_SIZE, thread_udp_rcv, NULL) )
+    {
+        DBG_ERROR("pthread_spawn thread_udp_rcv error\n");
+        return -1;
+    }
     return 0;
 }
 

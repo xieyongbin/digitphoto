@@ -254,11 +254,13 @@ void log_close(void)
 int log_init(void)
 {
     //初始化标准输出
-//    if (log_stdout_init())
-//    {
-//        DBG_ERROR("log stdout init error\n");
-//        return -1;
-//    }
+#if 0
+    if (log_stdout_init())
+    {
+        DBG_ERROR("log stdout init error\n");
+        return -1;
+    }
+#endif
     if (log_udp_init() )
     {
         DBG_ERROR("log stdout init error\n");

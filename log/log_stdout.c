@@ -9,6 +9,8 @@
 #include "log_manager.h"
 #include "debug.h"
 
+#define THREAD_LOG_STDOUT_STACK_SIZE    (1024 * 20)  //堆栈大小
+#define THREAD_LOG_STDOUT_PRI           (0)          //任务优先级
 static char send_buf[LOG_BUF_SIZE];
 
 static pthread_t stdout_snd_tid;
@@ -59,9 +61,9 @@ static int log_stdout_open(void)
         DBG_WARN("log stdout is forbidded\n");
         return -1;
     }
-    
     //创建stdout发送线程
-    if (-1 == pthread_create(&stdout_snd_tid, NULL, thread_stdout_send, NULL) )
+//    if (-1 == pthread_create(&stdout_snd_tid, &attr, thread_stdout_send, NULL) )
+    if (pthread_spawn(&stdout_snd_tid, PTHREAD_CREATE_DETACHED, THREAD_LOG_STDOUT_PRI, THREAD_LOG_STDOUT_STACK_SIZE, thread_stdout_send, NULL) )    
     {
         DBG_ERROR("create stdout send error\n");
         return -1;
@@ -163,7 +165,7 @@ static void *thread_stdout_send(void* arg)
     
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);  //不允许被取消
     //设置为分离属性
-    pthread_detach(pthread_self() );
+//    pthread_detach(pthread_self() );
     //申请一个kfifo
     psnd_fifo = kfifo_alloc(LOG_BUF_SIZE * 10);
     if (psnd_fifo == NULL)

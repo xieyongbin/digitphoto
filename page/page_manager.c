@@ -237,7 +237,7 @@ int show_specify_page_by_name(const char *name, struct disp_operation* pdisp)
 }
 
 /*****************************************************************************
-* Function     : deal_input_event
+* Function     : page_deal_input_event
 * Description  : 处理输入事件
 * Input        : struct input_event *pevent  
 * Output       ：
@@ -248,7 +248,7 @@ int show_specify_page_by_name(const char *name, struct disp_operation* pdisp)
 *   Author     : Xieyb
 *   Modify     : Create Function
 *****************************************************************************/
-int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
+int page_deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
 {
     if (pevent == NULL)
         return -1;
@@ -258,29 +258,6 @@ int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp)
     {
         if (pcur_page && pcur_page->deal_event)
             return pcur_page->deal_event(pevent, pdisp); //交给下一层去完成
-    }
-    else
-    {
-        if (pevent->val.value == 'q')
-        {
-            //释放当前界面的内存
-            if (pcur_page)
-            {
-                if (pcur_page->free_source)
-                {
-                    pcur_page->free_source();
-                }
-            }
-            //释放字体内存
-            font_exit();
-            //释放所有字体解码所支持的字体空间
-            encode_exit();
-            //释放显示设备的资源
-            disp_exit();
-            //释放page的资源
-            page_exit();
-            pthread_exit(0);
-        }
     }
     return -1;
 }
@@ -455,6 +432,7 @@ int page_exit(void)
         list_del(plist);
     }
     pthread_rwlock_unlock(&list_head_rwlock);
+    return 0;
 }
 
 /*****************************************************************************
@@ -533,5 +511,29 @@ int page_get_pic_data(char* path, const struct disp_layout* playout, unsigned in
     free_memory(pic.pixeldata);
     *pzoom_data = zoom_pic; //保存缩放后的数据
     return 0;
+}
+
+/*****************************************************************************
+* Function     : release_cur_page_resource
+* Description  : 释放当前页的资源
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月29日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void release_cur_page_resource(void)
+{
+    //释放当前界面的内存
+    if (pcur_page)
+    {
+        if (pcur_page->free_source)
+        {
+            pcur_page->free_source();
+        }
+    }
 }
 

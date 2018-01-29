@@ -116,7 +116,7 @@ int show_specify_page(struct page_operations *pops, struct disp_operation* pdisp
 struct page_operations *get_cur_page_operations(void);
 
 /*****************************************************************************
-* Function     : deal_input_event
+* Function     : page_deal_input_event
 * Description  : 处理输入事件
 * Input        : struct input_event *pevent  
 * Output       ：
@@ -127,7 +127,7 @@ struct page_operations *get_cur_page_operations(void);
 *   Author     : Xieyb
 *   Modify     : Create Function
 *****************************************************************************/
-int deal_input_event(struct input_event *pevent, struct disp_operation* pdisp);
+int page_deal_input_event(struct input_event *pevent, struct disp_operation* pdisp);
 
 /*****************************************************************************
 * Function     : register_page_operation
@@ -216,6 +216,20 @@ int page_exit(void);
 *   Modify     : Create Function
 *****************************************************************************/
 int page_get_pic_data(char* path, const struct disp_layout* playout, unsigned int bpp, struct pic_data *pzoom_data);
+
+/*****************************************************************************
+* Function     : release_cur_page_resource
+* Description  : 释放当前页的资源
+* Input        : void  
+* Output       ：
+* Return       : 
+* Note(s)      : 
+* Histroy      : 
+* 1.Date       : 2018年1月29日
+*   Author     : Xieyb
+*   Modify     : Create Function
+*****************************************************************************/
+void release_cur_page_resource(void);
 
 #endif //__PAGE_MANAGER_H__
 

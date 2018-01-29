@@ -7,6 +7,9 @@
 #include "input_screentouch.h"
 #include "debug.h"
 
+#define THREAD_INPUT_STACK_SIZE     (1024 * 20)  // 堆栈大小20K
+#define THREAD_INPUT_PRI            (0)          // 优先级
+
 static struct list_head input_list_head = LIST_HEAD_INIT(input_list_head);
 static pthread_rwlock_t list_head_rwlock = PTHREAD_RWLOCK_INITIALIZER;
 
@@ -36,7 +39,7 @@ static void *get_input_event_thread(void *arg)
     struct input_event event;
     
     //设置为分离属性
-    pthread_detach(pthread_self());
+//    pthread_detach(pthread_self());
     
     if (pevent == NULL)
     {
@@ -166,10 +169,11 @@ int input_open(void)
             if (!error)
             {
                 //打开成功，创建一个线程
-                if (pthread_create(&pops->tid, NULL, get_input_event_thread, pops->get_input_event) )
+//                if (pthread_create(&pops->tid, NULL, get_input_event_thread, pops->get_input_event) )
+                if (pthread_spawn(&pops->tid, PTHREAD_CREATE_DETACHED, THREAD_INPUT_PRI, THREAD_INPUT_STACK_SIZE, get_input_event_thread, pops->get_input_event) )
                 {
                     pthread_rwlock_unlock(&list_head_rwlock);
-                    DBG_ERROR("pthread_create error\n");
+                    DBG_ERROR("pthread_spawn get_input_event_thread error\n");
                     return -1;
                 }
             }
