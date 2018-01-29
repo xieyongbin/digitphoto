@@ -35,10 +35,11 @@ int sem_data_timedwait(sem_t *sem, unsigned int msec)
     {
         return sem_wait(sem);
     }
-    ssec = msec / 1000;
-    nsec = (msec - ssec * 1000) * 1000000;
+    //计算要等待的时间
+    ssec = msec / 1000;                     //秒数
+    nsec = (msec - ssec * 1000) * 1000000;  //纳秒数
     
-    if (ts.tv_nsec + nsec > 999999999)
+    if (ts.tv_nsec + nsec > 999999999)      //大于999999999纳秒就是1秒了，需要添加到秒上面
     {
         ts.tv_nsec = ts.tv_nsec + nsec - 999999999;
         ts.tv_sec += ssec + 1;
@@ -48,7 +49,7 @@ int sem_data_timedwait(sem_t *sem, unsigned int msec)
         ts.tv_nsec += nsec;
         ts.tv_sec += ssec;
     }
-    return sem_timedwait(sem, &ts);
+    return sem_timedwait(sem, &ts);         //指定等待时间
 }
 
 /*****************************************************************************
@@ -133,8 +134,7 @@ int pthread_get_priority_scope(int policy, int *pmin_prio, int *pmax_prio)
     {
         if ( (ret = sched_get_priority_max(policy) ) == -1)
         {
-            perror("shced_get_priority_max error\n")
-;
+            perror("shced_get_priority_max error\n");
             return ret;
         }
         *pmax_prio = ret;
@@ -190,7 +190,7 @@ int pthread_set_attr(pthread_attr_t *attr, int detach, int prio, unsigned long s
         goto goto_err;
     }
 
-    //获取时间片轮转调度策略支持的最小、最大优先级
+    //获取时间片轮转调度策略(一般为5ms)支持的最小、最大优先级
     ret = pthread_get_priority_scope(SCHED_RR, &priority_min, &priority_max);
     if (ret)
     {
@@ -206,9 +206,8 @@ int pthread_set_attr(pthread_attr_t *attr, int detach, int prio, unsigned long s
         fprintf(stderr, "pthread_getschedparam error %d\n", ret);
         goto goto_err;
     }
-#endif    
-
-    //调整调度参数的优先级
+#endif
+    //调整调度参数的优先级 1 ~ 99
     if (prio < priority_min) 
     {
         param.sched_priority = priority_min;
@@ -230,11 +229,12 @@ int pthread_set_attr(pthread_attr_t *attr, int detach, int prio, unsigned long s
         goto goto_err;
     }
 
-//    if (stacksize < PTHREAD_STACK_MIN)
-//    {
-//        stacksize = PTHREAD_STACK_MIN;
-//    }
-//    
+    //最小堆栈，最小为16K，定义在 limit.h
+    if (stacksize < PTHREAD_STACK_MIN)
+    {
+        stacksize = PTHREAD_STACK_MIN;  //使用最小堆栈
+    }
+    
     //设置线程堆栈大小
     ret = pthread_attr_setstacksize(attr, stacksize);
     if (ret)

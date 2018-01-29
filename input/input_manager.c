@@ -169,7 +169,6 @@ int input_open(void)
             if (!error)
             {
                 //打开成功，创建一个线程
-//                if (pthread_create(&pops->tid, NULL, get_input_event_thread, pops->get_input_event) )
                 if (pthread_spawn(&pops->tid, PTHREAD_CREATE_DETACHED, THREAD_INPUT_PRI, THREAD_INPUT_STACK_SIZE, get_input_event_thread, pops->get_input_event) )
                 {
                     pthread_rwlock_unlock(&list_head_rwlock);

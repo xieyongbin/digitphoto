@@ -20,7 +20,7 @@ struct bitmap_param
     unsigned int left;                  //字体真正显示的起点x坐标
     unsigned top;                       //字体真正显示的起点y坐标
     unsigned char bpp;
-    int pitch;                              //
+    int pitch;                          //
     unsigned char *pbuf;
 };
 
@@ -34,13 +34,12 @@ struct font_bitmap
 //字体操作函数,供下级具体字体调用
 struct font_operation
 {
-    char* name;
-    int (*open)(const char *fontfile, const unsigned int fontsize);
-    void (*close)(void);
-    int (*set_font_size)(const unsigned int fontsize);
-    int (*get_font_size)(void);
-    int (*get_font_bitmap)(const unsigned int code, struct font_bitmap *pfont_bitmap);
-    void (*exit)(void);
+    char* name;                                                                         //字体名字
+    int (*open)(const char *fontfile, const unsigned int fontsize);                     //打开字体
+    void (*close)(void);                                                                //关闭字体
+    int (*set_font_size)(const unsigned int fontsize);                                  //设置字体大小
+    int (*get_font_size)(void);                                                         //获取字体大小
+    int (*get_font_bitmap)(const unsigned int code, struct font_bitmap *pfont_bitmap);  //获取字体位图
 };
 
 struct font_list                        //字体链表节点

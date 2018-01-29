@@ -56,7 +56,7 @@ struct kfifo *kfifo_init(unsigned char *buffer, unsigned int size)
         return NULL;
 	}
 
-	fifo = malloc(sizeof(struct kfifo) );
+	fifo = malloc(sizeof(struct kfifo) );  //构造一个kfifo结构体
 	if (!fifo) {
 		return NULL;
 	}
@@ -85,11 +85,11 @@ struct kfifo *kfifo_alloc(unsigned int size)
 		size = roundup_pow_of_two(size);  
 	}
 
-	buffer = malloc(size);     //分配struct kfifo结构体
+	buffer = malloc(size);          //分配kfifo的内存大小
 	if (!buffer)
 		return NULL;
 
-	ret = kfifo_init(buffer, size);
+	ret = kfifo_init(buffer, size); //初始化kfifo
     if (!ret) {
         free(buffer);
         return NULL;

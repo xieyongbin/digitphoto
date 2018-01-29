@@ -9,8 +9,8 @@
 #include "pic_bmp.h"
 #include "debug.h"
 
-static struct list_head pic_list_head = LIST_HEAD_INIT(pic_list_head);
-static pthread_rwlock_t list_head_rwlock = PTHREAD_RWLOCK_INITIALIZER;
+static struct list_head pic_list_head = LIST_HEAD_INIT(pic_list_head);  //图片解码链表头
+static pthread_rwlock_t list_head_rwlock = PTHREAD_RWLOCK_INITIALIZER;  //链表头锁
 
 /*****************************************************************************
 * Function     : open_one_pic
@@ -55,8 +55,8 @@ int open_one_pic(const char* name, struct file_desc *pfile_desc)
         DBG_ERROR("fstat pic %s error\n", name);
         return -1;
     }
-    pfile_desc->fd = file_fd;
-    pfile_desc->filelen = file_stat.st_size; 
+    pfile_desc->fd = file_fd;                //文件描述符
+    pfile_desc->filelen = file_stat.st_size; //文件长度
     return 0;
 }
 
@@ -202,7 +202,7 @@ int pic_init(void)
 {
     int error = 0;
     
-    error |= pic_bmp_init();
+    error |= pic_bmp_init();   //目前只支持bmp格式的图片解码
     return error;
 }
 

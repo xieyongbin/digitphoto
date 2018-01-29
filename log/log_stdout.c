@@ -16,7 +16,7 @@ static char send_buf[LOG_BUF_SIZE];
 static pthread_t stdout_snd_tid;
 static struct kfifo *psnd_fifo = NULL;
 
-//#define USE_SEM
+#define USE_SEM
 #ifdef USE_SEM
     static sem_t sem_send;
 #else
@@ -198,7 +198,7 @@ static void *thread_stdout_send(void* arg)
     {
 #ifdef USE_SEM           
         //等待信号量
-        sem_data_timedwait(&sem_send, 100);
+        sem_data_timedwait(&sem_send, 100);                 //等待100ms
         if (!(fifo_len = kfifo_len(psnd_fifo) ) )
         {
             //kfifo里没有数据，继续休眠

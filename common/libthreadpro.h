@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <limits.h>
 /*****************************************************************************
 * Function     : sem_data_timedwait
 * Description  : 等待一个信号量

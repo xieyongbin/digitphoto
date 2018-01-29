@@ -21,6 +21,7 @@ struct font_file_info fileinfo;
 static int gbk_open(const char *fontfile, const unsigned int fontsize);
 static int gbk_get_font_bitmap(const unsigned int code, struct font_bitmap *pfont_bitmap);
 
+//字体gbk操作集
 static struct font_operation gbk_font_ops =
 {
     .name               = "gbk",

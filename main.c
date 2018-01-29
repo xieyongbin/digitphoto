@@ -33,24 +33,6 @@ struct bookset
 
 static struct bookset booksetting;
 
-/* SIGSEGV信号的处理函数，回溯栈，打印函数的调用关系 */
-void DebugBacktrace(int signum)
-{
-#define SIZE 100
-    void *array[SIZE];
-    int size, i;
-    char **strings;
-
-    fprintf (stderr, "\nSegmentation fault\n");
-    size = backtrace (array, SIZE);    
-    fprintf (stderr, "Backtrace (%d deep):\n", size);
-    strings = backtrace_symbols (array, size);
-    for (i = 0; i < size; i++)
-        fprintf (stderr, "%d: %s\n", i, strings[i]);
-    free (strings);
-    exit(-1);
-}
-
 /*****************************************************************************
 * Function     : print_usage
 * Description  : 打印Usage
@@ -399,17 +381,7 @@ void* thread_control(void* arg)
         pdisp_ops->clean_screen(COLOR_BACKGROUND, NULL, 0);
         pdisp_ops->show_flush(NULL, 0);
     }
-#if 0    
-    //显示首页
-    if ( (pmain_ops = get_page_operations_by_name("main") ) == NULL)
-    {
-        DBG_ERROR("Should exit main page\n");
-        pthread_exit((void *)-1);
-    }
-    
-    //显示主界面
-    show_specify_page(pmain_ops, pdisp_ops);
-#endif
+    //显示page main
     if (show_specify_page_by_name("main", pdisp_ops) == -1)
     {
         DBG_ERROR("show main page error\n");
@@ -432,9 +404,6 @@ int main(int argc, char **argv)
     struct disp_operation* pdisp;
     pthread_t control_tid;
 
-    /* 设置SIGSEGV信号的处理函数 */
-    signal(SIGSEGV, DebugBacktrace);
-    
     if (argc != 2)
     {
         print_usage(argv[0]);
@@ -479,9 +448,6 @@ int main(int argc, char **argv)
         goto goto_error1;
     
     //创建主控线程
-//    if (pthread_create(&control_tid, NULL, thread_control, (void *)pdisp) == -1)
-//        goto goto_error1;
-
     if (pthread_spawn(&control_tid, PTHREAD_CREATE_JOINABLE, THREAD_CONTROL_PRI, THREAD_CONTROL_STACK_SIZE, thread_control, (void *)pdisp) )
         goto goto_error1;
     

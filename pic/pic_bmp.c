@@ -11,6 +11,7 @@ static int is_bmp_format(struct file_desc *pfile);
 static int get_bmp_data(struct file_desc* pfile, struct pic_data *pic);
 static void free_bmp_data(struct pic_data *pic);
 
+//bmp图片的操作集
 static struct pic_operations pic_bmp_ops =
 {
     .name = "bmp",

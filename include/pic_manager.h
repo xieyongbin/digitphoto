@@ -6,9 +6,9 @@
 
 struct file_desc
 {
-    int fd;         /* 文件描述符 */
-    unsigned int filelen;    /* 文件大小 */ 
-    unsigned char *pfilebuf; /* 使用mmap函数映射文件得到的内存 */
+    int fd;                             /* 文件描述符 */
+    unsigned int filelen;               /* 文件大小 */ 
+    unsigned char *pfilebuf;            /* 使用mmap函数映射文件得到的内存 */
 };
 
 /* 图片的象素数据 */
@@ -19,15 +19,15 @@ struct pic_data
 	unsigned int bpp;                    /* 一个象素用多少位来表示 */
 	unsigned int linebytes;              /* 一行数据有多少字节 */
 	unsigned int totalbytes;             /* 所有字节数 */ 
-	unsigned char *pixeldata;   /* 象素数据存储的地方 */
+	unsigned char *pixeldata;            /* 象素数据存储的地方 */
 };
 
 struct pic_operations 
 {
-    const char* name;
-    int (*is_support)(struct file_desc *pfile);
-    int (*get_pic_data)(struct file_desc* pfile, struct pic_data *pic);
-    void (*free_pic_data)(struct pic_data *pic);
+    const char* name;                                                   //图片解码名字
+    int (*is_support)(struct file_desc *pfile);                         //支持用该图片格式进行解码
+    int (*get_pic_data)(struct file_desc* pfile, struct pic_data *pic); //获取该图片数据
+    void (*free_pic_data)(struct pic_data *pic);                        //释放图片数据
     struct list_head list;
 };
 

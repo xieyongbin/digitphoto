@@ -4619,6 +4619,7 @@ static const unsigned char fontdata_8x16[FONTDATAMAX] =
 static int ascii_open(const char *fontfile, const unsigned int fontsize);
 static int ascii_get_font_bitmap(const unsigned int code, struct font_bitmap *pfont_bitmap);
 
+//字体ascii操作集
 static struct font_operation ascii_font_ops =
 {
     .name               = "ascii",
